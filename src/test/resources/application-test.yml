@@ -1,0 +1,4 @@
+spring:
+  datasource:
+    hikari:
+      maxLifeTime: 600000
