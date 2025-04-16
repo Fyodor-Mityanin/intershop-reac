@@ -13,5 +13,5 @@ public interface ItemRepository extends R2dbcRepository<Item, Long> {
     Flux<Item> findByTitleContainsIgnoreCase(String title, Pageable pageable);
 
     @Query("SELECT * FROM items LIMIT :limit OFFSET :offset")
-    Flux<Item> findAll(long limit, long offset);
+    Flux<Item> findAllPageable(long limit, long offset);
 }

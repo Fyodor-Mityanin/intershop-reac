@@ -2,7 +2,6 @@ package ru.yandex.practicum.intershop.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.*;
@@ -24,44 +23,40 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final OrderItemRepository orderItemRepository;
-    private final TransactionalOperator transactionalOperator;
 
     public Mono<Void> addToOrder(Long itemId, String action, String sessionId) {
-        return transactionalOperator.execute(txStatus ->
-                itemRepository.findById(itemId)
-                        .zipWith(getOrCreateBySession(sessionId))
-                        .flatMap(tuple -> {
-                            Item item = tuple.getT1();
-                            Order order = tuple.getT2();
+        return itemRepository.findById(itemId)
+                .zipWith(getOrCreateBySession(sessionId))
+                .flatMap(tuple -> {
+                    Item item = tuple.getT1();
+                    Order order = tuple.getT2();
 
-                            return orderItemRepository.findByOrderIdAndItemId(order.getId(), item.getId())
-                                    .defaultIfEmpty(new OrderItem(item, order))
-                                    .flatMap(orderItem -> {
-                                        switch (action) {
-                                            case "plus" -> {
-                                                orderItem.setQuantity(orderItem.getQuantity() + 1);
-                                                return orderItemRepository.save(orderItem).then();
-                                            }
-                                            case "minus" -> {
-                                                int updated = Math.max(orderItem.getQuantity() - 1, 0);
-                                                if (updated == 0) {
-                                                    return orderItemRepository.delete(orderItem);
-                                                } else {
-                                                    orderItem.setQuantity(updated);
-                                                    return orderItemRepository.save(orderItem).then();
-                                                }
-                                            }
-                                            case "delete" -> {
-                                                return orderItemRepository.delete(orderItem);
-                                            }
-                                            default -> {
-                                                return Mono.error(new IllegalArgumentException("Unknown action: " + action));
-                                            }
+                    return orderItemRepository.findByOrderIdAndItemId(order.getId(), item.getId())
+                            .defaultIfEmpty(new OrderItem(item, order))
+                            .flatMap(orderItem -> {
+                                switch (action) {
+                                    case "plus" -> {
+                                        orderItem.setQuantity(orderItem.getQuantity() + 1);
+                                        return orderItemRepository.save(orderItem).then();
+                                    }
+                                    case "minus" -> {
+                                        int updated = Math.max(orderItem.getQuantity() - 1, 0);
+                                        if (updated == 0) {
+                                            return orderItemRepository.delete(orderItem);
+                                        } else {
+                                            orderItem.setQuantity(updated);
+                                            return orderItemRepository.save(orderItem).then();
                                         }
-                                    });
-                        })
-
-        ).then();
+                                    }
+                                    case "delete" -> {
+                                        return orderItemRepository.delete(orderItem);
+                                    }
+                                    default -> {
+                                        return Mono.error(new IllegalArgumentException("Unknown action: " + action));
+                                    }
+                                }
+                            });
+                });
     }
 
 

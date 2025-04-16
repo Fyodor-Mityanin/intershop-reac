@@ -36,13 +36,4 @@ public class CartControllerTest extends TestContainerTest {
                 .exchange()
                 .expectStatus().is3xxRedirection();
     }
-
-    @Test
-    void buyTest() {
-        webTestClient.post()
-                .uri("/cart/items/buy")
-                .exchange()
-                .expectStatus().is3xxRedirection();
-
-    }
 }

@@ -31,7 +31,7 @@ public class ItemService {
         if (StringUtils.hasLength(search)) {
             items = itemRepository.findByTitleContainsIgnoreCase(search, pageable);
         } else {
-            items = itemRepository.findAll(pageSize, 0);
+            items = itemRepository.findAllPageable(pageSize, 0);
         }
         return orderService.findOrderItemsMapBySession(session)
                 .flatMapMany(
