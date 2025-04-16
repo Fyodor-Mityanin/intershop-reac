@@ -2,21 +2,19 @@ package ru.yandex.practicum.intershop.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.*;
 import ru.yandex.practicum.intershop.entity.Item;
 import ru.yandex.practicum.intershop.entity.Order;
 import ru.yandex.practicum.intershop.entity.OrderItem;
-import ru.yandex.practicum.intershop.mapper.OrderItemMapper;
-import ru.yandex.practicum.intershop.mapper.OrderMapper;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderItemRepository;
 import ru.yandex.practicum.intershop.repository.OrderRepository;
 
+import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,8 +24,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final OrderItemRepository orderItemRepository;
-    private final OrderMapper orderMapper;
-    private final OrderItemMapper orderItemMapper;
     private final TransactionalOperator transactionalOperator;
 
     public Mono<Void> addToOrder(Long itemId, String action, String sessionId) {
@@ -89,33 +85,70 @@ public class OrderService {
                 .collectMap(OrderItem::getItemId, OrderItem::getQuantity);
     }
 
-    @Transactional
-    public List<ItemResponseDto> getNewBySession(String sessionId) {
+    public Flux<ItemResponseDto> getNewBySession(String sessionId) {
         return orderRepository
                 .findBySessionAndStatus(sessionId, OrderStatus.NEW)
-                .map(Order::getOrderItems)
-                .map(orderItemMapper::toDtos)
-                .orElse(Collections.emptyList())
-                .stream()
-                .sorted(Comparator.comparing(ItemResponseDto::getId))
-                .toList();
+                .map(Order::getId)
+                .flatMapMany(orderItemRepository::findByOrderId)
+                .flatMap(orderItem -> itemRepository.findById(orderItem.getItemId()).map(item ->
+                                new ItemResponseDto()
+                                        .setId(orderItem.getItemId())
+                                        .setTitle(item.getTitle())
+                                        .setPrice(item.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
+                                        .setDescription(item.getDescription())
+                                        .setImgPath(item.getImgPath())
+                                        .setCount(orderItem.getQuantity())
+                        )
+                )
+                .sort(Comparator.comparing(ItemResponseDto::getId));
     }
 
-    public Integer setStatusAndGet(String sessionId) {
-        Order order = orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW).orElseThrow();
-        order.setStatus(OrderStatus.PROCESSING);
-        orderRepository.save(order);
-        return order.getId();
+    public Mono<Long> setStatusAndGet(String sessionId) {
+        return orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Order not found")))
+                .flatMap(order -> {
+                    order.setStatus(OrderStatus.PROCESSING);
+                    return orderRepository.save(order);
+                })
+                .map(Order::getId);
     }
 
-    @Transactional
-    public OrderResponseDto getById(int orderId) {
-        return orderMapper.toResponseDto(orderRepository.getReferenceById(orderId));
+    public Mono<OrderResponseDto> getById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Order not found")))
+                .flatMap(this::getItems);
     }
 
-    public List<OrderResponseDto> getBySession(String session) {
-        return orderRepository.findBySessionAndStatusNot(session, OrderStatus.NEW).stream()
-                .map(orderMapper::toResponseDto)
-                .collect(Collectors.toList());
+    public Flux<OrderResponseDto> getBySession(String session) {
+        return orderRepository.findBySessionAndStatusNot(session, OrderStatus.NEW)
+                .flatMap(this::getItems);
+    }
+
+    public Mono<BigDecimal> getTotalSumBySession(String sessionId) {
+        return getNewBySession(sessionId)
+                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getCount())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Mono<OrderResponseDto> getItems(Order order) {
+        return orderItemRepository.findByOrderId(order.getId())
+                .flatMap(orderItem ->
+                        itemRepository.findById(orderItem.getItemId())
+                                .map(item -> new ItemResponseDto()
+                                        .setId(item.getId())
+                                        .setTitle(item.getTitle())
+                                        .setDescription(item.getDescription())
+                                        .setImgPath(item.getImgPath())
+                                        .setCount(orderItem.getQuantity())
+                                        .setPrice(item.getPrice())
+                                )
+                )
+                .collectList()
+                .map(items -> {
+                    BigDecimal totalSum = items.stream()
+                            .map(ItemResponseDto::getPrice)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new OrderResponseDto(order.getId(), items, totalSum);
+                });
     }
 }

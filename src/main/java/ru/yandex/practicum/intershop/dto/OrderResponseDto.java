@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @Accessors(chain = true)
 public class OrderResponseDto {
-    private final int id;
+    private final Long id;
     private final List<ItemResponseDto> items;
     private final BigDecimal totalSum;
 }

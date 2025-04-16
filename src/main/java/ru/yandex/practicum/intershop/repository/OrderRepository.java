@@ -11,6 +11,5 @@ import ru.yandex.practicum.intershop.entity.Order;
 public interface OrderRepository extends R2dbcRepository<Order, Long> {
 
     Flux<Order> findBySessionAndStatusNot(String session, OrderStatus status);
-
     Mono<Order> findBySessionAndStatus(String session, OrderStatus status);
 }

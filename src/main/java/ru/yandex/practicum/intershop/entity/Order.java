@@ -25,7 +25,4 @@ public class Order {
     private String session;
     @Column("status")
     private OrderStatus status;
-
-//    @OneToMany(mappedBy = "order", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-//    private Set<OrderItem> orderItems = new LinkedHashSet<>();
 }

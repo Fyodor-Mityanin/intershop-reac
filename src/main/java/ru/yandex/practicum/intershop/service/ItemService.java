@@ -7,12 +7,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.ItemResponseDto;
 import ru.yandex.practicum.intershop.entity.Item;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
 import ru.yandex.practicum.intershop.repository.ItemRepository;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -46,15 +45,17 @@ public class ItemService {
                 );
     }
 
-    @Transactional
-    public ItemResponseDto getById(int itemId, String session) {
-        Item referenceById = itemRepository.getReferenceById(itemId);
-        ItemResponseDto itemResponseDto = itemMapper.toDto(referenceById);
-        Map<Integer, Integer> orderDto = orderService.findOrderItemsMapBySession(session);
-        if (orderDto != null) {
-            itemResponseDto.setCount(orderDto.get(itemResponseDto.getId()));
-        }
-        return itemResponseDto;
+    public Mono<ItemResponseDto> getById(Long itemId, String session) {
+        return orderService.findOrderItemsMapBySession(session)
+                .flatMap(
+                        orderDto ->
+                                itemRepository.findById(itemId)
+                                        .map(itemMapper::toDto)
+                                        .map(item -> {
+                                            item.setCount(orderDto.getOrDefault(item.getId(), 0));
+                                            return item;
+                                        })
+                );
     }
 }
 
