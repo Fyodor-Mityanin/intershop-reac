@@ -1,31 +1,22 @@
 package ru.yandex.practicum.intershop.entity;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@Entity
-@Table(name = "items")
+@Table("items")
 public class Item {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
-
-    @Column(name = "title", nullable = false, length = Integer.MAX_VALUE)
+    @Column("title")
     private String title;
-
-    @Column(name = "price", nullable = false, precision = 12, scale = 2)
+    @Column("price")
     private BigDecimal price;
-
-    @Column(name = "description", nullable = false, length = Integer.MAX_VALUE)
+    @Column("description")
     private String description;
-
-    @Column(name = "img_path", nullable = false, length = Integer.MAX_VALUE)
+    @Column("imgPath")
     private String imgPath;
 }

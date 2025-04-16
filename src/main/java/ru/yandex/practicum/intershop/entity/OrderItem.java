@@ -1,16 +1,9 @@
 package ru.yandex.practicum.intershop.entity;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
-@Getter
-@Setter
-@Entity
-@Table(name = "order_items")
-@NoArgsConstructor
+import org.springframework.data.relational.core.mapping.Table;
+
+@Table("order_items")
 public class OrderItem {
     @EmbeddedId
     private OrderItemId id;

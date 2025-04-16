@@ -1,8 +1,8 @@
 package ru.yandex.practicum.intershop.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.intershop.dto.*;
 import ru.yandex.practicum.intershop.entity.Item;
 import ru.yandex.practicum.intershop.entity.Order;
