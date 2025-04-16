@@ -31,7 +31,7 @@ public class ItemController {
     public Mono<Rendering> getItem(@PathVariable Long itemId, WebSession session) {
         return Mono.just(
                 Rendering.view("item")
-                        .modelAttribute("items", itemService.getById(itemId, session.getId()))
+                        .modelAttribute("item", itemService.getById(itemId, session.getId()))
                         .build()
         );
     }

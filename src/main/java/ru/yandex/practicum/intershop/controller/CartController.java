@@ -46,11 +46,11 @@ public class CartController {
 
     @PostMapping("/buy")
     public Mono<Rendering> buy(WebSession session) {
-        return Mono.just(
-                Rendering
-                        .view("redirect:/orders/" + orderService.setStatusAndGet(session.getId()))
-                        .modelAttribute("newOrder", true)
-                        .build()
-        );
+        return orderService.setStatusAndGet(session.getId())
+                .map(orderId ->
+                        Rendering.view("redirect:/orders/" + orderId)
+                                .modelAttribute("newOrder", true)
+                                .build()
+                );
     }
 }

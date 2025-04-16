@@ -4,52 +4,45 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import ru.yandex.practicum.intershop.controller.CartController;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.util.List;
 
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 public class CartControllerTest extends TestContainerTest {
 
     @Autowired
-    private CartController cartController;
-
-    private MockMvc mockMvc;
+    private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(cartController)
-                .build();
+        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 
     @Test
-    @Sql({"sql/items.sql", "sql/orders.sql", "sql/order_items.sql"})
-    void getCartTest() throws Exception {
-        mockMvc.perform(get("/cart/items"))
-                .andExpect(status().isOk());
+    void getCartTest() {
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_HTML);
     }
 
     @Test
-    @Sql({"sql/items.sql", "sql/orders.sql", "sql/order_items.sql"})
-    void addToCartTest() throws Exception {
-        mockMvc.perform(
-                        post("/cart/items/2")
-                                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                                .param("action", "plus")
-                )
-                .andExpect(status().is3xxRedirection());
+    void addToCartTest() {
+        webTestClient.post()
+                .uri("/cart/items/2")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .bodyValue("action=plus")
+                .exchange()
+                .expectStatus().is3xxRedirection();
     }
 
     @Test
-    @Sql({"sql/items.sql", "sql/orders.sql", "sql/order_items.sql"})
-    void buyTest() throws Exception {
-        mockMvc.perform(post("/cart/items/buy"))
-                .andExpect(status().is3xxRedirection());
+    void buyTest() {
+        webTestClient.post()
+                .uri("/cart/items/buy")
+                .exchange()
+                .expectStatus().is3xxRedirection();
+
     }
 }

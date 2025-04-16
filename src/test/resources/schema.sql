@@ -18,8 +18,9 @@ create table if not exists orders
 
 create table if not exists order_items
 (
+    id serial primary key,
     order_id integer references orders (id) not null,
     item_id integer references items (id) not null,
     quantity smallint not null default 0,
-    primary key (order_id, item_id)
+    CONSTRAINT uk_order_item UNIQUE (order_id, item_id)
 );

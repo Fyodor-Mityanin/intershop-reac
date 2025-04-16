@@ -2,6 +2,7 @@ package ru.yandex.practicum.intershop.entity;
 
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
@@ -10,6 +11,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("order_items")
 @Getter
 @Setter
+@NoArgsConstructor
 public class OrderItem {
     @Id
     private Long id;

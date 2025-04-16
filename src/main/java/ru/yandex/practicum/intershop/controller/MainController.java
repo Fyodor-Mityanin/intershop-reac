@@ -31,6 +31,7 @@ public class MainController {
         return Mono.just(
                 Rendering.view("main")
                         .modelAttribute("sort", sort)
+                        .modelAttribute("pageSize", pageSize)
                         .modelAttribute("items", itemService.getBySearchPageable(search, sort, pageSize, session.getId()))
                         .build()
         );

@@ -21,6 +21,6 @@ public class Item {
     private BigDecimal price;
     @Column("description")
     private String description;
-    @Column("imgPath")
+    @Column("img_path")
     private String imgPath;
 }
