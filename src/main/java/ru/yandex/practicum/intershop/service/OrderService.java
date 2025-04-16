@@ -3,6 +3,8 @@ package ru.yandex.practicum.intershop.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.dto.*;
 import ru.yandex.practicum.intershop.entity.Item;
 import ru.yandex.practicum.intershop.entity.Order;
@@ -26,72 +28,71 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
+    private final TransactionalOperator transactionalOperator;
 
-    @Transactional
-    public void addToOrder(int itemId, String action, String sessionId) {
-        Item item = itemRepository.getReferenceById(itemId);
-        Order order = getOrCreateBySession(sessionId);
-        OrderItem orderItem = order.getOrderItems().stream()
-                .filter(i -> i.getItem().getId().equals(item.getId()))
-                .findFirst()
-                .orElse(new OrderItem(item, order, 0));
-        switch (action) {
-            case "plus" -> {
-                orderItem.setQuantity(orderItem.getQuantity() + 1);
-                order.getOrderItems().add(orderItem);
-            }
-            case "minus" -> {
-                int count = orderItem.getQuantity() == 0 ? 0 : orderItem.getQuantity() - 1;
-                if (count == 0) {
-                    order.getOrderItems().remove(orderItem);
-                    orderItemRepository.delete(orderItem);
-                } else {
-                    orderItem.setQuantity(count);
-                    order.getOrderItems().add(orderItem);
-                }
-            }
-            case "delete" -> {
-                order.getOrderItems().remove(orderItem);
-                orderItemRepository.delete(orderItem);
-            }
-        }
-        orderRepository.save(order);
+    public Mono<Void> addToOrder(Long itemId, String action, String sessionId) {
+        return transactionalOperator.execute(txStatus ->
+                itemRepository.findById(itemId)
+                        .zipWith(getOrCreateBySession(sessionId))
+                        .flatMap(tuple -> {
+                            Item item = tuple.getT1();
+                            Order order = tuple.getT2();
+
+                            return orderItemRepository.findByOrderIdAndItemId(order.getId(), item.getId())
+                                    .defaultIfEmpty(new OrderItem(item, order))
+                                    .flatMap(orderItem -> {
+                                        switch (action) {
+                                            case "plus" -> {
+                                                orderItem.setQuantity(orderItem.getQuantity() + 1);
+                                                return orderItemRepository.save(orderItem).then();
+                                            }
+                                            case "minus" -> {
+                                                int updated = Math.max(orderItem.getQuantity() - 1, 0);
+                                                if (updated == 0) {
+                                                    return orderItemRepository.delete(orderItem);
+                                                } else {
+                                                    orderItem.setQuantity(updated);
+                                                    return orderItemRepository.save(orderItem).then();
+                                                }
+                                            }
+                                            case "delete" -> {
+                                                return orderItemRepository.delete(orderItem);
+                                            }
+                                            default -> {
+                                                return Mono.error(new IllegalArgumentException("Unknown action: " + action));
+                                            }
+                                        }
+                                    });
+                        })
+
+        ).then();
     }
 
-    public Order getOrCreateBySession(String session) {
-        Optional<Order> order = orderRepository.findBySessionAndStatus(session, OrderStatus.NEW.name());
-        if (order.isPresent()) {
-            return order.get();
-        }
+
+    private Mono<Order> getOrCreateBySession(String sessionId) {
+        return orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW)
+                .switchIfEmpty(createNewOrder(sessionId));
+    }
+
+    private Mono<Order> createNewOrder(String sessionId) {
         Order newOrder = new Order();
-        newOrder.setSession(session);
+        newOrder.setSession(sessionId);
         newOrder.setCustomer(ANONYMOUS_CUSTOMER);
-        newOrder.setStatus(OrderStatus.NEW.name());
+        newOrder.setStatus(OrderStatus.NEW);
         return orderRepository.save(newOrder);
     }
 
-    public Map<Integer, Integer> findOrderItemsMapBySession(String session) {
-        return orderRepository.findBySessionAndStatus(session, OrderStatus.NEW.name())
-                .map(orderMapper::toDto)
-                .map(OrderDto::getOrderItems)
-                .map(this::getOrderItemMap)
-                .orElse(null);
-    }
-
-    private Map<Integer, Integer> getOrderItemMap(List<OrderItemDto> orderItemDto) {
-        return orderItemDto.stream()
-                .collect(
-                        Collectors.toMap(
-                                OrderItemDto::getItemId,
-                                OrderItemDto::getQuantity
-                        )
-                );
+    public Mono<Map<Long, Integer>> findOrderItemsMapBySession(String session) {
+        return orderRepository.findBySessionAndStatus(session, OrderStatus.NEW)
+                .map(Order::getId)
+                .flatMapMany(orderItemRepository::findByOrderId)
+                .collectMap(OrderItem::getItemId, OrderItem::getQuantity);
     }
 
     @Transactional
     public List<ItemResponseDto> getNewBySession(String sessionId) {
         return orderRepository
-                .findBySessionAndStatus(sessionId, OrderStatus.NEW.name())
+                .findBySessionAndStatus(sessionId, OrderStatus.NEW)
                 .map(Order::getOrderItems)
                 .map(orderItemMapper::toDtos)
                 .orElse(Collections.emptyList())
@@ -101,8 +102,8 @@ public class OrderService {
     }
 
     public Integer setStatusAndGet(String sessionId) {
-        Order order = orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW.name()).orElseThrow();
-        order.setStatus(OrderStatus.PROCESSING.name());
+        Order order = orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW).orElseThrow();
+        order.setStatus(OrderStatus.PROCESSING);
         orderRepository.save(order);
         return order.getId();
     }
@@ -113,7 +114,7 @@ public class OrderService {
     }
 
     public List<OrderResponseDto> getBySession(String session) {
-        return orderRepository.findBySessionAndStatusNot(session, OrderStatus.NEW.name()).stream()
+        return orderRepository.findBySessionAndStatusNot(session, OrderStatus.NEW).stream()
                 .map(orderMapper::toResponseDto)
                 .collect(Collectors.toList());
     }

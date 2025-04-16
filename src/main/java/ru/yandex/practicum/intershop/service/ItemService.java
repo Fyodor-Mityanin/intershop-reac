@@ -1,13 +1,12 @@
 package ru.yandex.practicum.intershop.service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import ru.yandex.practicum.intershop.dto.ItemResponseDto;
 import ru.yandex.practicum.intershop.entity.Item;
 import ru.yandex.practicum.intershop.mapper.ItemMapper;
@@ -22,27 +21,29 @@ public class ItemService {
     private final ItemMapper itemMapper;
     private final OrderService orderService;
 
-    public Page<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String session) {
+    public Flux<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String session) {
         Sort sort = switch (sortRaw) {
             case "ALFA" -> Sort.by("title");
             case "PRICE" -> Sort.by("price");
             default -> Sort.unsorted();
         };
         Pageable pageable = PageRequest.of(0, pageSize, sort);
-        Page<Item> items;
+        Flux<Item> items;
         if (StringUtils.hasLength(search)) {
             items = itemRepository.findByTitleContainsIgnoreCase(search, pageable);
         } else {
             items = itemRepository.findAll(pageable);
         }
-        Page<ItemResponseDto> itemResponseDtos = items.map(itemMapper::toDto);
-        Map<Integer, Integer> orderDto = orderService.findOrderItemsMapBySession(session);
-        if (orderDto != null) {
-            itemResponseDtos
-                    .getContent()
-                    .forEach(item -> item.setCount(orderDto.getOrDefault(item.getId(), 0)));
-        }
-        return itemResponseDtos;
+        return orderService.findOrderItemsMapBySession(session)
+                .flatMapMany(
+                        orderDto ->
+                                items
+                                        .map(itemMapper::toDto)
+                                        .map(item -> {
+                                            item.setCount(orderDto.getOrDefault(item.getId(), 0));
+                                            return item;
+                                        })
+                );
     }
 
     @Transactional

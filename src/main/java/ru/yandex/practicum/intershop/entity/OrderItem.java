@@ -1,31 +1,28 @@
 package ru.yandex.practicum.intershop.entity;
 
 
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table("order_items")
+@Getter
+@Setter
 public class OrderItem {
-    @EmbeddedId
-    private OrderItemId id;
-
-    @MapsId("orderId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
-
-    @MapsId("itemId")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "item_id", nullable = false)
-    private Item item;
-
-    @ColumnDefault("0")
-    @Column(name = "quantity", nullable = false)
+    @Id
+    private Long id;
+    @Column("order_id")
+    private Long orderId;
+    @Column("item_id")
+    private Long itemId;
+    @Column("quantity")
     private Integer quantity;
 
-    public OrderItem(Item item, Order order, int quantity) {
-        this.item = item;
-        this.order = order;
-        this.quantity = quantity;
-        this.id = new OrderItemId(item.getId(), order.getId());
+    public OrderItem(Item item, Order order) {
+        this.itemId = item.getId();
+        this.orderId = order.getId();
+        this.quantity = 0;
     }
 }
