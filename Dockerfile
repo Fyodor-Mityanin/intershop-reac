@@ -3,7 +3,7 @@ FROM maven:3.9.9-amazoncorretto-21-debian AS build
 WORKDIR /app
 
 COPY src ./src
-COPY pom.xml .
+COPY shop-service/pom.xml .
 
 RUN mvn clean package -DskipTests
 
