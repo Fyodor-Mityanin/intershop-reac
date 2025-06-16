@@ -1,0 +1,3 @@
+TRUNCATE items CASCADE;
+TRUNCATE order_items CASCADE;
+TRUNCATE orders CASCADE;

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:latest
-    container_name: postgres_r2dbc_db
+    container_name: postgres-r2dbc-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -14,11 +14,10 @@ services:
     networks:
       - app-network
 
-  app:
+  shop-service:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: intershop_reac_app
+      context: ./shop-service
+    container_name: intershop-shop-service
     environment:
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/postgres
       SPRING_R2DBC_USERNAME: postgres
@@ -27,6 +26,17 @@ services:
       - "8080:8080"
     depends_on:
       - postgres
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: intershop-payment-service
+    ports:
+      - "8081:8080"
+    depends_on:
+      - shop-service
     networks:
       - app-network
 

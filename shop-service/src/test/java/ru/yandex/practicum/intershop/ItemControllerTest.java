@@ -4,11 +4,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
 
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class ItemControllerTest extends TestContainerTest {
 
     @Autowired
@@ -16,6 +17,7 @@ class ItemControllerTest extends TestContainerTest {
 
     @BeforeEach
     void setUp() {
+        cleanupDatabase();
         executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 

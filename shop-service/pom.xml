@@ -132,7 +132,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <finalName>intershop_reac</finalName>
+                    <finalName>shop-service</finalName>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

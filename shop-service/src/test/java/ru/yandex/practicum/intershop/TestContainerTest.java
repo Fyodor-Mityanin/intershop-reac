@@ -33,17 +33,16 @@ public class TestContainerTest {
             .withDatabaseName("testdb")
             .withUsername("testuser")
             .withPassword("testpass")
-            .withInitScript("schema.sql");
-
-    static {
-        postgreSQLContainer.start();
-    }
+            .withInitScript("schema.sql")
+            .withReuse(true);
 
     @DynamicPropertySource
     private static void postgresqlProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
-        registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
-        registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
+        registry.add("spring.r2dbc.url", () ->
+                postgreSQLContainer.getJdbcUrl().replace("jdbc:", "r2dbc:")
+        );
+        registry.add("spring.r2dbc.username", postgreSQLContainer::getUsername);
+        registry.add("spring.r2dbc.password", postgreSQLContainer::getPassword);
     }
 
     protected void executeSqlScriptsBlocking(List<String> sqlScripts) {
@@ -55,5 +54,9 @@ public class TestContainerTest {
                                 .thenMany(Mono.from(connection.close()))
                 )
                 .blockLast();
+    }
+
+    protected void cleanupDatabase() {
+        executeSqlScriptsBlocking(List.of("/sql/clean_up.sql"));
     }
 }

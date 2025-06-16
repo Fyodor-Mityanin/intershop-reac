@@ -1,5 +1,3 @@
-TRUNCATE orders CASCADE;
-
 INSERT INTO orders (id, order_time, session, customer, status) VALUES (6, '2025-03-16 13:19:05.377049', '1', 'anonymousCustomer', 'NEW');
 INSERT INTO orders (id, order_time, session, customer, status) VALUES (7, '2025-03-16 13:25:00.551897', '2', 'anonymousCustomer', 'NEW');
 INSERT INTO orders (id, order_time, session, customer, status) VALUES (8, '2025-03-16 13:28:00.068838', '3', 'anonymousCustomer', 'NEW');

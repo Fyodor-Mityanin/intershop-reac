@@ -1,5 +1,3 @@
-TRUNCATE order_items CASCADE;
-
 INSERT INTO order_items (order_id, item_id, quantity) VALUES (6, 1, 1);
 INSERT INTO order_items (order_id, item_id, quantity) VALUES (20, 1, 3);
 INSERT INTO order_items (order_id, item_id, quantity) VALUES (20, 2, 2);

@@ -1,5 +1,3 @@
-TRUNCATE items CASCADE;
-
 INSERT INTO items (id, title, price, description, img_path) VALUES (1, 'Item 1', 923.62, 'Description for item 1', '/images/item1.jpg');
 INSERT INTO items (id, title, price, description, img_path) VALUES (2, 'Item 2', 974.71, 'Description for item 2', '/images/item2.jpg');
 INSERT INTO items (id, title, price, description, img_path) VALUES (3, 'Item 3', 642.56, 'Description for item 3', '/images/item3.jpg');

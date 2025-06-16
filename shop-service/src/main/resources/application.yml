@@ -6,7 +6,7 @@ spring:
     encoding: UTF-8
     cache: false
   application:
-    name: intershop-reac
+    name: intershop-shop-service
   r2dbc:
     url: ${SPRING_R2DBC_URL}
     username: ${SPRING_R2DBC_USERNAME}
