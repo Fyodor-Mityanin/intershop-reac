@@ -11,4 +11,18 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>payment-service</name>
     <description>Payment service</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>ru.yandex.practicum.intershop</groupId>
+            <artifactId>payment-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 </project>

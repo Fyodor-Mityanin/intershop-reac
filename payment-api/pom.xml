@@ -11,4 +11,86 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>payment-api</name>
     <description>Payment api</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.13.0</version>
+                <executions>
+                    <!-- Генерация клиента для shop-service -->
+                    <execution>
+                        <id>generate-client</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/payment-api.yaml</inputSpec>
+                            <generatorName>java</generatorName>
+                            <library>webclient</library>
+                            <apiPackage>ru.yandex.practicum.intershop.payment.client.api</apiPackage>
+                            <modelPackage>ru.yandex.practicum.intershop.payment.client.model</modelPackage>
+                            <invokerPackage>ru.yandex.practicum.intershop.payment.client.invoker</invokerPackage>
+                            <configOptions>
+                                <java8>true</java8>
+                                <dateLibrary>java8</dateLibrary>
+                                <reactive>true</reactive>
+                                <useJakartaEe>true</useJakartaEe>
+                            </configOptions>
+                            <output>${project.build.directory}/generated-sources/client</output>
+                        </configuration>
+                    </execution>
+
+                    <!-- Генерация серверного кода для payment-service -->
+                    <execution>
+                        <id>generate-server</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/payment-api.yaml</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <apiPackage>ru.yandex.practicum.intershop.payment.api</apiPackage>
+                            <modelPackage>ru.yandex.practicum.intershop.payment.api.model</modelPackage>
+                            <configOptions>
+                                <useTags>true</useTags>
+                                <interfaceOnly>true</interfaceOnly>
+                                <reactive>true</reactive>
+                                <useSpringBoot3>true</useSpringBoot3>
+                            </configOptions>
+                            <output>${project.build.directory}/generated-sources/server</output>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
