@@ -9,7 +9,7 @@ servers:
 paths:
   /api/payment/balance:
     get:
-      tags: [Payment]
+      tags: [ Payment ]
       operationId: getBalance
       responses:
         '200':
@@ -21,7 +21,7 @@ paths:
 
   /api/payment/charge:
     post:
-      tags: [Payment]
+      tags: [ Payment ]
       operationId: chargePayment
       requestBody:
         required: true
@@ -55,11 +55,13 @@ components:
 
     ChargeRequest:
       type: object
+      required: [ amount ]
       properties:
         amount:
           type: number
           format: double
           example: 150.0
+          nullable: false
 
     PaymentResult:
       type: object

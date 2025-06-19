@@ -82,9 +82,12 @@
                             <modelPackage>ru.yandex.practicum.intershop.payment.api.model</modelPackage>
                             <configOptions>
                                 <useTags>true</useTags>
-                                <interfaceOnly>true</interfaceOnly>
                                 <reactive>true</reactive>
+                                <openApiNullable>true</openApiNullable>
+                                <interfaceOnly>true</interfaceOnly>
                                 <useSpringBoot3>true</useSpringBoot3>
+                                <skipDefaultInterface>true</skipDefaultInterface>
+                                <library>spring-boot</library>
                             </configOptions>
                             <output>${project.build.directory}/generated-sources/server</output>
                         </configuration>
