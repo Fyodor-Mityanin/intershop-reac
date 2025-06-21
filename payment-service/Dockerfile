@@ -2,15 +2,14 @@
 FROM maven:3.9.9-amazoncorretto-21-debian AS build
 WORKDIR /app
 
-COPY src ./src
-COPY pom.xml .
+COPY . .
 
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -pl payment-service -am
 
 # Run stage
 FROM openjdk:21
 WORKDIR /app
 
-COPY --from=build /app/target/payment-service.jar app.jar
+COPY --from=build /app/payment-service/target/payment-service.jar payment-service.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "payment-service.jar"]

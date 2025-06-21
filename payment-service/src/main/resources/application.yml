@@ -1,2 +1,2 @@
 payment:
-  initial-balance: 1000.0
+  initial-balance: ${PAYMENT_INITIAL_BALANCE}

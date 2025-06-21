@@ -14,25 +14,41 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   shop-service:
     build:
-      context: ./shop-service
+      context: .
+      dockerfile: shop-service/Dockerfile
     container_name: intershop-shop-service
     environment:
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/postgres
       SPRING_R2DBC_USERNAME: postgres
       SPRING_R2DBC_PASSWORD: password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
     ports:
       - "8080:8080"
     depends_on:
       - postgres
+      - redis
     networks:
       - app-network
 
   payment-service:
     build:
-      context: ./payment-service
+      context: .
+      dockerfile: payment-service/Dockerfile
     container_name: intershop-payment-service
+    environment:
+      PAYMENT_INITIAL_BALANCE: 1000.0
     ports:
       - "8081:8080"
     depends_on:

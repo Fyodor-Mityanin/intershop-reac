@@ -1,0 +1,4 @@
+server:
+  port: 8081
+payment:
+  initial-balance: 1000.0
