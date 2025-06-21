@@ -1,6 +1,7 @@
 package ru.yandex.practicum.intershop.shop.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,46 +18,67 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
     private final static String ANONYMOUS_CUSTOMER = "anonymousCustomer";
 
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final OrderItemRepository orderItemRepository;
+    private final OrderCacheService orderCacheService;
 
     public Mono<Void> addToOrder(Long itemId, String action, String sessionId) {
+        log.info("Start addToOrder: itemId={}, action={}, sessionId={}", itemId, action, sessionId);
         return itemRepository.findById(itemId)
+                .doOnNext(item -> log.debug("Found item: {}", item))
                 .zipWith(getOrCreateBySession(sessionId))
                 .flatMap(tuple -> {
                     Item item = tuple.getT1();
                     Order order = tuple.getT2();
-
+                    log.debug("Using order: {}", order);
                     return orderItemRepository.findByOrderIdAndItemId(order.getId(), item.getId())
                             .defaultIfEmpty(new OrderItem(item, order))
                             .flatMap(orderItem -> {
                                 switch (action) {
                                     case "plus" -> {
                                         orderItem.setQuantity(orderItem.getQuantity() + 1);
-                                        return orderItemRepository.save(orderItem).then();
+                                        log.info("Increasing quantity for itemId={} to {}", itemId, orderItem.getQuantity());
+                                        return orderItemRepository.save(orderItem)
+                                                .doOnSuccess(i -> log.debug("Saved order item: {}", i))
+                                                .then();
                                     }
                                     case "minus" -> {
                                         int updated = Math.max(orderItem.getQuantity() - 1, 0);
                                         if (updated == 0) {
-                                            return orderItemRepository.delete(orderItem);
+                                            log.info("Deleting item from order: itemId={}", itemId);
+                                            return orderItemRepository.delete(orderItem)
+                                                    .doOnSuccess(v -> log.debug("Deleted order item: {}", orderItem));
+
                                         } else {
                                             orderItem.setQuantity(updated);
-                                            return orderItemRepository.save(orderItem).then();
+                                            log.info("Decreasing quantity for itemId={} to {}", itemId, updated);
+                                            return orderItemRepository.save(orderItem)
+                                                    .doOnSuccess(i -> log.debug("Saved updated order item: {}", i))
+                                                    .then();
                                         }
                                     }
                                     case "delete" -> {
-                                        return orderItemRepository.delete(orderItem);
+                                        log.info("Explicit delete for itemId={} from order", itemId);
+                                        return orderItemRepository.delete(orderItem)
+                                                .doOnSuccess(v -> log.debug("Deleted order item: {}", orderItem));
                                     }
                                     default -> {
+                                        log.warn("Unknown action: {}", action);
                                         return Mono.error(new IllegalArgumentException("Unknown action: " + action));
                                     }
                                 }
                             });
-                });
+                })
+                .then(
+                        orderCacheService.evictNewBySession(sessionId)
+                                .doOnNext(evicted -> log.info("Cache evicted for sessionId={}: {}", sessionId, evicted)))
+                .then()
+                .doOnTerminate(() -> log.info("Completed addToOrder for sessionId={}", sessionId));
     }
 
 
@@ -81,21 +103,7 @@ public class OrderService {
     }
 
     public Flux<ItemResponseDto> getNewBySession(String sessionId) {
-        return orderRepository
-                .findBySessionAndStatus(sessionId, OrderStatus.NEW)
-                .map(Order::getId)
-                .flatMapMany(orderItemRepository::findByOrderId)
-                .flatMap(orderItem -> itemRepository.findById(orderItem.getItemId()).map(item ->
-                                new ItemResponseDto()
-                                        .setId(orderItem.getItemId())
-                                        .setTitle(item.getTitle())
-                                        .setPrice(item.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())))
-                                        .setDescription(item.getDescription())
-                                        .setImgPath(item.getImgPath())
-                                        .setCount(orderItem.getQuantity())
-                        )
-                )
-                .sort(Comparator.comparing(ItemResponseDto::getId));
+        return orderCacheService.getNewBySession(sessionId);
     }
 
     public Mono<Long> setStatusAndGet(String sessionId) {

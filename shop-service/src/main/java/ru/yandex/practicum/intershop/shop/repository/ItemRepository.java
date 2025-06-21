@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import ru.yandex.practicum.intershop.shop.entity.Item;
 
+@SuppressWarnings("unused")
 @Repository
 public interface ItemRepository extends R2dbcRepository<Item, Long> {
 

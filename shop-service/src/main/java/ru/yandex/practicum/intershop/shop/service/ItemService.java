@@ -11,14 +11,13 @@ import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.shop.dto.ItemResponseDto;
 import ru.yandex.practicum.intershop.shop.entity.Item;
 import ru.yandex.practicum.intershop.shop.mapper.ItemMapper;
-import ru.yandex.practicum.intershop.shop.repository.ItemRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ItemService {
-    private final ItemRepository itemRepository;
     private final ItemMapper itemMapper;
     private final OrderService orderService;
+    private final ItemCacheService itemCacheService;
 
     public Flux<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String session) {
         Sort sort = switch (sortRaw) {
@@ -29,9 +28,9 @@ public class ItemService {
         Pageable pageable = PageRequest.of(0, pageSize, sort);
         Flux<Item> items;
         if (StringUtils.hasLength(search)) {
-            items = itemRepository.findByTitleContainsIgnoreCase(search, pageable);
+            items = itemCacheService.findAllFilteredPageable(search, pageable);
         } else {
-            items = itemRepository.findAllPageable(pageSize, 0);
+            items = itemCacheService.findAllPageable(pageable);
         }
         return orderService.findOrderItemsMapBySession(session)
                 .flatMapMany(
@@ -49,7 +48,7 @@ public class ItemService {
         return orderService.findOrderItemsMapBySession(session)
                 .flatMap(
                         orderDto ->
-                                itemRepository.findById(itemId)
+                                itemCacheService.findById(itemId)
                                         .map(itemMapper::toDto)
                                         .map(item -> {
                                             item.setCount(orderDto.getOrDefault(item.getId(), 0));
