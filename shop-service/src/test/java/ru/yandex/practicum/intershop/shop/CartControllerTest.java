@@ -1,5 +1,8 @@
 package ru.yandex.practicum.intershop.shop;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +12,27 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 public class CartControllerTest extends TestContainerTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    private static WireMockServer wireMockServer;
+
+    @BeforeAll
+    static void setupWireMock() {
+        wireMockServer = new WireMockServer(9999);
+        wireMockServer.start();
+    }
+
+    @AfterAll
+    static void stopWireMock() {
+        wireMockServer.stop();
+    }
+
 
     @BeforeEach
     void setUp() {
@@ -23,6 +42,12 @@ public class CartControllerTest extends TestContainerTest {
 
     @Test
     void getCartTest() {
+        wireMockServer.stubFor(get(urlEqualTo("/api/payment/balance"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"balance\": 10000.0}")
+                        .withStatus(200)));
+
         webTestClient.get()
                 .uri("/cart/items")
                 .exchange()

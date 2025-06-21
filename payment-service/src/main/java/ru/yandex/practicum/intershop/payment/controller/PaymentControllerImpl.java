@@ -12,21 +12,23 @@ import ru.yandex.practicum.intershop.payment.api.model.BalanceResponse;
 import ru.yandex.practicum.intershop.payment.api.model.ChargeRequest;
 import ru.yandex.practicum.intershop.payment.api.model.PaymentResult;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class PaymentControllerImpl implements PaymentApi {
 
     @Value("${payment.initial-balance}")
-    private double initialBalance;
+    private BigDecimal initialBalance;
 
     @Override
     public Mono<ResponseEntity<PaymentResult>> chargePayment(Mono<ChargeRequest> chargeRequest, ServerWebExchange exchange) {
         return chargeRequest
                 .doOnNext(request -> log.info("Received chargePayment request: {}", request))
                 .flatMap(request -> {
-                            double newBalance = initialBalance - request.getAmount();
-                            if (newBalance >= 0) {
+                            BigDecimal newBalance = initialBalance.subtract(request.getAmount());
+                            if (newBalance.compareTo(BigDecimal.ZERO) >= 0) {
                                 log.info("Payment successful. Amount: {}, New balance: {}", request.getAmount(), newBalance);
                                 initialBalance = newBalance;
                                 return Mono.just(

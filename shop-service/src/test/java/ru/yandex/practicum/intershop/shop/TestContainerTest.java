@@ -9,6 +9,7 @@ import org.springframework.r2dbc.connection.init.ScriptUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -24,6 +25,9 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
+@TestPropertySource(properties = {
+        "PAYMENT_API_URL=http://localhost:9999"
+})
 public class TestContainerTest {
 
     @Autowired

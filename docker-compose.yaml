@@ -34,6 +34,7 @@ services:
       SPRING_R2DBC_PASSWORD: password
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      PAYMENT_API_URL: http://payment-service:8080
     ports:
       - "8080:8080"
     depends_on:

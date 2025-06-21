@@ -15,3 +15,7 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST}
       port: ${SPRING_REDIS_PORT}
+
+payment:
+  api:
+    url: ${PAYMENT_API_URL}
