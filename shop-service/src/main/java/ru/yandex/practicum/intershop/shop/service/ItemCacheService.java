@@ -1,105 +1,53 @@
 package ru.yandex.practicum.intershop.shop.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import ru.yandex.practicum.intershop.shop.config.RedisConfig;
 import ru.yandex.practicum.intershop.shop.entity.Item;
 import ru.yandex.practicum.intershop.shop.repository.ItemRepository;
 
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ItemCacheService {
+
     private final ItemRepository itemRepository;
-    private final ReactiveRedisTemplate<String, Item> redisTemplate;
 
-    private static final String CACHE_KEY = "items:all";
-    private static final Duration CACHE_TTL = Duration.ofMinutes(1); // TTL = 1 минута
-
-    public Mono<Item> findById(Long id) {
-        String key = buildKey(id);
-        return redisTemplate.opsForValue()
-                .get(key)
-                .switchIfEmpty(
-                        itemRepository.findById(id)
-                                .flatMap(item -> redisTemplate
-                                        .opsForValue()
-                                        .set(key, item, CACHE_TTL)
-                                        .thenReturn(item)
-                                )
-                );
-    }
-
-    private String buildKey(Long id) {
-        return "item::" + id;
-    }
-
-    public Flux<Item> findAllFilteredPageable(String search, Pageable pageable) {
-        return findAll()
-                .filter(matchesSearch(search))
-                .transform(applySortAndPaging(pageable));
-    }
-
-    public Flux<Item> findAllPageable(Pageable pageable) {
-        return findAll()
-                .transform(applySortAndPaging(pageable));
-    }
-
-    private Predicate<Item> matchesSearch(String search) {
-        String lowered = search.toLowerCase();
-        return item -> item.getTitle().toLowerCase().contains(lowered);
-    }
-
-    private Function<Flux<Item>, Flux<Item>> applySortAndPaging(Pageable pageable) {
-        return flux -> flux
-                .sort(itemComparator(pageable.getSort()))
-                .skip((long) pageable.getPageNumber() * pageable.getPageSize())
-                .take(pageable.getPageSize());
-    }
-
-    private Comparator<Item> itemComparator(Sort sort) {
-        return (a, b) -> {
-            for (Sort.Order order : sort) {
-                int cmp = switch (order.getProperty()) {
-                    case "title" -> a.getTitle().compareToIgnoreCase(b.getTitle());
-                    case "price" -> a.getPrice().compareTo(b.getPrice());
-                    default -> 0;
-                };
-                if (cmp != 0) return order.isAscending() ? cmp : -cmp;
-            }
-            return 0;
+    @Cacheable(
+            cacheNames = RedisConfig.CACHE_ITEMS_ALL,
+            key = "#sortRaw + ':' + #pageSize",
+            condition = "#search == null || #search.length() == 0"
+    )
+    public Flux<Item> getItemsSearchPageable(String search, String sortRaw, Integer pageSize) {
+        log.info("getItemsSearchPageable load from DB: search={},sortRaw={},pageSize={}", search, sortRaw, pageSize);
+        Sort sort = switch (sortRaw) {
+            case "ALFA" -> Sort.by("title");
+            case "PRICE" -> Sort.by("price");
+            default -> Sort.unsorted();
         };
+        Pageable pageable = PageRequest.of(0, pageSize, sort);
+        Flux<Item> items;
+        if (StringUtils.hasLength(search)) {
+            items = itemRepository.findByTitleContainsIgnoreCase(search, pageable);
+        } else {
+            items = itemRepository.findAllPageable(pageSize, 0);
+        }
+        return items;
     }
 
-    private Flux<Item> findAll() {
-        return redisTemplate
-                .opsForList()
-                .size(CACHE_KEY)
-                .flatMapMany(size -> {
-                    if (size == 0) {
-                        return itemRepository.findAll()
-                                .collectList()
-                                .flatMapMany(items -> {
-                                    if (items.isEmpty()) {
-                                        return Flux.empty();
-                                    }
-                                    return redisTemplate
-                                            .opsForList()
-                                            .rightPushAll(CACHE_KEY, items)
-                                            .then(redisTemplate.expire(CACHE_KEY, CACHE_TTL))
-                                            .thenMany(Flux.fromIterable(items));
-                                });
-                    } else {
-                        return redisTemplate.opsForList().range(CACHE_KEY, 0, -1);
-                    }
-                });
+    @Cacheable(
+            cacheNames = RedisConfig.CACHE_ITEMS_ID,
+            key = "#id"
+    )
+    public Mono<Item> findById(Long id) {
+        return itemRepository.findById(id);
     }
 }

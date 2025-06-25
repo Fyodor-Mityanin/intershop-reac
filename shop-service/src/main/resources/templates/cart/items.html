@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Cart</title>
+</head>
+
+<body>
+<a href="/orders" style="float:right;">
+    <b>ORDERS &cudarrr;</b>
+</a>
+<a href="/" style="float:right;">
+    <b>MAIN &cudarrr;</b>
+</a>
+<table style="width:70%;margin-left:auto;margin-right:auto;">
+    <tr th:each="item : ${items}">
+        <td>
+            <table>
+                <tr>
+                    <td>
+                        <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}" alt="No image">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b th:text="${item.getTitle()}"></b>
+                    </td>
+                    <td>
+                        <b th:text="${item.getPrice()}+' rub.'"></b>
+                    </td>
+                </tr>
+                <tr><td th:text="${item.getDescription()}"></td></tr>
+                <tr>
+                    <td>
+                        <form th:action="${'/cart/items/'+item.getId()}" method="post">
+                            <button name="action" value="minus">-</button>
+                            <span th:text="${item.getCount()}"></span>
+                            <button name="action" value="plus">+</button>
+                            <button name="action" value="delete" style="float:right;">&cross;</button>
+                        </form>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right">
+            <b th:text="'Total: '+${total}+' rub.'"></b>
+        </td>
+    </tr>
+    <tr>
+        <td style="text-align:right">
+            <form action="/cart/items/buy" method="post" th:if="${isBuyAvailable} and ${!items.isEmpty()}">
+                <button>Buy</button>
+            </form>
+            <div th:if="${isBuyAvailable == null or !isBuyAvailable}" style="border: 1px solid red; padding: 5px; display: inline-block; color: red;">
+                Buy Unavailable
+            </div>
+        </td>
+    </tr>
+</table>
+</body>
+
+</html>

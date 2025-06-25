@@ -31,19 +31,25 @@ public class CartController {
     @GetMapping
     public Mono<Rendering> getCart(WebSession session) {
         String sessionId = session.getId();
-        Mono<BigDecimal> totalSum = orderService.getTotalSumBySession(sessionId);
-        Mono<Boolean> isBuyAvailable = paymentServiceClient.isBuyAvailable(totalSum);
+        Mono<BigDecimal> totalSum = orderService.getTotalSumBySession(sessionId)
+                .doOnNext(sum -> System.out.println("💰 totalSum = " + sum));
+        Mono<Boolean> isBuyAvailable = paymentServiceClient.isBuyAvailable(totalSum)
+                .doOnNext(available -> System.out.println("🟢 isBuyAvailable = " + available));
         return Mono
                 .zip(
-                        orderService.getNewBySession(sessionId).collectList(),
+                        orderService.getNewBySession(sessionId).collectList()
+                                .doOnNext(items -> {
+                                    System.out.println("🛒 items:");
+                                    items.forEach(item -> System.out.println(" - " + item));
+                                }),
                         totalSum,
                         isBuyAvailable
                 )
                 .map(tuple -> Rendering.view("cart")
-                                .modelAttribute("items", tuple.getT1())
-                                .modelAttribute("total", tuple.getT2())
-                                .modelAttribute("isBuyAvailable", tuple.getT3())
-                                .build()
+                        .modelAttribute("items", tuple.getT1())
+                        .modelAttribute("total", tuple.getT2())
+                        .modelAttribute("isBuyAvailable", tuple.getT3())
+                        .build()
                 );
     }
 

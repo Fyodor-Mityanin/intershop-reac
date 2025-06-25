@@ -1,7 +1,4 @@
 spring:
-  web:
-    resources:
-      encoding: UTF-8
   thymeleaf:
     encoding: UTF-8
     cache: false
@@ -15,6 +12,9 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST}
       port: ${SPRING_REDIS_PORT}
+  cache:
+    redis:
+      time-to-live: 60000
 
 payment:
   api:

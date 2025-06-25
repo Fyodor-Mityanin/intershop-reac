@@ -12,6 +12,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import reactor.core.publisher.Flux;
@@ -44,6 +45,7 @@ public class TestContainerTest {
     @Container
     public static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:7.2")
             .withExposedPorts(6379)
+            .waitingFor(Wait.forListeningPort())
             .withReuse(true);
 
     @DynamicPropertySource

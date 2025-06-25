@@ -1,11 +1,7 @@
 package ru.yandex.practicum.intershop.shop.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.shop.dto.ItemResponseDto;
@@ -20,18 +16,7 @@ public class ItemService {
     private final ItemCacheService itemCacheService;
 
     public Flux<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String session) {
-        Sort sort = switch (sortRaw) {
-            case "ALFA" -> Sort.by("title");
-            case "PRICE" -> Sort.by("price");
-            default -> Sort.unsorted();
-        };
-        Pageable pageable = PageRequest.of(0, pageSize, sort);
-        Flux<Item> items;
-        if (StringUtils.hasLength(search)) {
-            items = itemCacheService.findAllFilteredPageable(search, pageable);
-        } else {
-            items = itemCacheService.findAllPageable(pageable);
-        }
+        Flux<Item> items = itemCacheService.getItemsSearchPageable(search, sortRaw, pageSize);
         return orderService.findOrderItemsMapBySession(session)
                 .flatMapMany(
                         orderDto ->
