@@ -35,11 +35,13 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       PAYMENT_API_URL: http://payment-service:8080
+      KEYCLOAK_URL: http://keycloak:8080
     ports:
       - "8080:8080"
     depends_on:
       - postgres
       - redis
+      - keycloak
     networks:
       - app-network
 
@@ -50,10 +52,23 @@ services:
     container_name: intershop-payment-service
     environment:
       PAYMENT_INITIAL_BALANCE: 1000.0
+      KEYCLOAK_URL: http://keycloak:8080
     ports:
       - "8081:8080"
     depends_on:
       - shop-service
+    networks:
+      - app-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "9090:8080"
     networks:
       - app-network
 

@@ -18,7 +18,7 @@ class MainControllerTest extends TestContainerTest {
     @BeforeEach
     void setUp() {
         cleanupDatabase();
-        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
+        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/users.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 
     @Test

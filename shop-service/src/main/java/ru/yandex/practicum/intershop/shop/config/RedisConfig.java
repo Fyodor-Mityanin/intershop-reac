@@ -11,7 +11,7 @@ import org.springframework.data.redis.serializer.*;
 public class RedisConfig {
     public static final String CACHE_ITEMS_ALL = "items:all";
     public static final String CACHE_ITEMS_ID = "items:id";
-    public static final String CACHE_SESSION = "session";
+    public static final String CACHE_USER = "user";
 
     @Bean
     public RedisCacheConfiguration cacheConfiguration() {

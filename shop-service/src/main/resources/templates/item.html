@@ -1,15 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <title>Showcase of goods</title>
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
+    <a th:href="@{/login}" style="float:right;" sec:authorize="isAnonymous()">
+        <b>LOGIN &cudarrr;</b>
+    </a>
+    <a th:href="@{/logout}" style="float:right;" sec:authorize="isAuthenticated()">
+        <b>LOGOUT &cudarrr;</b>
+    </a>
+    <a href="/orders" style="float:right;" sec:authorize="isAuthenticated()">
         <b>ORDERS &cudarrr;</b>
     </a>
-    <a href="/cart/items" style="float:right;">
+    <a href="/cart/items" style="float:right;" sec:authorize="isAuthenticated()">
         <b>CART &cudarrr;</b>
     </a>
     <a href="/" style="float:right;">
@@ -26,7 +34,7 @@
         <p>
             <span th:text="${item.getDescription()}"></span>
         </p>
-        <form th:action="${'/items/'+item.getId()}" method="post">
+        <form sec:authorize="isAuthenticated()" th:action="${'/items/'+item.getId()}" method="post">
             <button name="action" value="minus">-</button>
             <span th:text="${item.getCount()}"></span>
             <button name="action" value="plus">+</button>

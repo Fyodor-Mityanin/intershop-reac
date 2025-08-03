@@ -15,9 +15,9 @@ public class ItemService {
     private final OrderService orderService;
     private final ItemCacheService itemCacheService;
 
-    public Flux<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String session) {
+    public Flux<ItemResponseDto> getBySearchPageable(String search, String sortRaw, Integer pageSize, String userLogin) {
         Flux<Item> items = itemCacheService.getItemsSearchPageable(search, sortRaw, pageSize);
-        return orderService.findOrderItemsMapBySession(session)
+        return orderService.findOrderItemsMapByLogin(userLogin)
                 .flatMapMany(
                         orderDto ->
                                 items
@@ -29,8 +29,8 @@ public class ItemService {
                 );
     }
 
-    public Mono<ItemResponseDto> getById(Long itemId, String session) {
-        return orderService.findOrderItemsMapBySession(session)
+    public Mono<ItemResponseDto> getById(Long itemId, String userLogin) {
+        return orderService.findOrderItemsMapByLogin(userLogin)
                 .flatMap(
                         orderDto ->
                                 itemCacheService.findById(itemId)

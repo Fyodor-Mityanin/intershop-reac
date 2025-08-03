@@ -7,12 +7,18 @@ create table if not exists items
     img_path text not null
 );
 
+CREATE TABLE users (
+    id          serial primary key,
+    login       varchar(100) unique not null,
+    password    varchar(255) not null,
+    role        varchar(50) not null
+);
+
 create table if not exists orders
 (
     id serial primary key,
     order_time timestamp not null default current_timestamp,
-    session text not null,
-    customer text not null,
+    user_login text references users (login) not null,
     status text not null
 );
 

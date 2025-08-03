@@ -1,7 +1,6 @@
 package ru.yandex.practicum.intershop.shop.entity;
 
 
-
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -19,10 +18,8 @@ public class Order {
     private Long id;
     @Column("order_time")
     private LocalDateTime orderTime;
-    @Column("customer")
-    private String customer;
-    @Column("session")
-    private String session;
+    @Column("user_login")
+    private String userLogin;
     @Column("status")
     private OrderStatus status;
 }

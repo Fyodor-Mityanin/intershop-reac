@@ -24,12 +24,12 @@ public class OrderCacheService {
     private final ItemRepository itemRepository;
 
     @Cacheable(
-            cacheNames = RedisConfig.CACHE_SESSION,
-            key = "#sessionId"
+            cacheNames = RedisConfig.CACHE_USER,
+            key = "#userLogin"
     )
-    public Mono<List<ItemResponseDto>> getNewBySession(String sessionId) {
+    public Mono<List<ItemResponseDto>> getNewByUserLogin(String userLogin) {
         return orderRepository
-                .findBySessionAndStatus(sessionId, OrderStatus.NEW)
+                .findByUserLoginAndStatus(userLogin, OrderStatus.NEW)
                 .map(Order::getId)
                 .flatMapMany(orderItemRepository::findByOrderId)
                 .flatMap(orderItem -> itemRepository.findById(orderItem.getItemId())

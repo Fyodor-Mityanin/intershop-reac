@@ -22,17 +22,15 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class OrderService {
-    private final static String ANONYMOUS_CUSTOMER = "anonymousCustomer";
-
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderCacheService orderCacheService;
 
-    @CacheEvict(cacheNames = RedisConfig.CACHE_SESSION, key = "#sessionId")
-    public Mono<Void> addToOrder(Long itemId, String action, String sessionId) {
-        log.info("Start addToOrder: itemId={}, action={}, sessionId={}", itemId, action, sessionId);
-        return Mono.zip(itemRepository.findById(itemId), getOrCreateBySession(sessionId))
+    @CacheEvict(cacheNames = RedisConfig.CACHE_USER, key = "#userLogin")
+    public Mono<Void> addToOrder(Long itemId, String action, String userLogin) {
+        log.info("Start addToOrder: itemId={}, action={}, userLogin={}", itemId, action, userLogin);
+        return Mono.zip(itemRepository.findById(itemId), getOrCreateByUserLogin(userLogin))
                 .flatMap(tuple -> {
                     Item item = tuple.getT1();
                     Order order = tuple.getT2();
@@ -41,7 +39,7 @@ public class OrderService {
                             .defaultIfEmpty(new OrderItem(item, order))
                             .flatMap(orderItem -> handleAction(action, itemId, orderItem));
                 })
-                .doOnTerminate(() -> log.info("Completed addToOrder for sessionId={}", sessionId))
+                .doOnTerminate(() -> log.info("Completed addToOrder for userLogin={}", userLogin))
                 .then();
     }
 
@@ -82,32 +80,31 @@ public class OrderService {
     }
 
 
-    private Mono<Order> getOrCreateBySession(String sessionId) {
-        return orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW)
-                .switchIfEmpty(createNewOrder(sessionId));
+    private Mono<Order> getOrCreateByUserLogin(String userLogin) {
+        return orderRepository.findByUserLoginAndStatus(userLogin, OrderStatus.NEW)
+                .switchIfEmpty(createNewOrder(userLogin));
     }
 
-    private Mono<Order> createNewOrder(String sessionId) {
+    private Mono<Order> createNewOrder(String userLogin) {
         Order newOrder = new Order();
-        newOrder.setSession(sessionId);
-        newOrder.setCustomer(ANONYMOUS_CUSTOMER);
+        newOrder.setUserLogin(userLogin);
         newOrder.setStatus(OrderStatus.NEW);
         return orderRepository.save(newOrder);
     }
 
-    public Mono<Map<Long, Integer>> findOrderItemsMapBySession(String session) {
-        return orderRepository.findBySessionAndStatus(session, OrderStatus.NEW)
+    public Mono<Map<Long, Integer>> findOrderItemsMapByLogin(String login) {
+        return orderRepository.findByUserLoginAndStatus(login, OrderStatus.NEW)
                 .map(Order::getId)
                 .flatMapMany(orderItemRepository::findByOrderId)
                 .collectMap(OrderItem::getItemId, OrderItem::getQuantity);
     }
 
-    public Flux<ItemResponseDto> getNewBySession(String sessionId) {
-        return orderCacheService.getNewBySession(sessionId).flatMapMany(Flux::fromIterable);
+    public Flux<ItemResponseDto> getNewByUserLogin(String userLogin) {
+        return orderCacheService.getNewByUserLogin(userLogin).flatMapMany(Flux::fromIterable);
     }
 
-    public Mono<Long> setStatusAndGet(String sessionId) {
-        return orderRepository.findBySessionAndStatus(sessionId, OrderStatus.NEW)
+    public Mono<Long> setStatusAndGet(String userLogin) {
+        return orderRepository.findByUserLoginAndStatus(userLogin, OrderStatus.NEW)
                 .switchIfEmpty(Mono.error(new IllegalStateException("Order not found")))
                 .flatMap(order -> {
                     order.setStatus(OrderStatus.PROCESSING);
@@ -122,13 +119,13 @@ public class OrderService {
                 .flatMap(this::getItems);
     }
 
-    public Flux<OrderResponseDto> getBySession(String session) {
-        return orderRepository.findBySessionAndStatusNot(session, OrderStatus.NEW)
+    public Flux<OrderResponseDto> getByUserLogin(String userLogin) {
+        return orderRepository.findByUserLoginAndStatusNot(userLogin, OrderStatus.NEW)
                 .flatMap(this::getItems);
     }
 
-    public Mono<BigDecimal> getTotalSumBySession(String sessionId) {
-        return orderRepository.getTotalSumBySession(sessionId);
+    public Mono<BigDecimal> getTotalSumByUserLogin(String userLogin) {
+        return orderRepository.getTotalSumByUserLogin(userLogin);
     }
 
     private Mono<OrderResponseDto> getItems(Order order) {

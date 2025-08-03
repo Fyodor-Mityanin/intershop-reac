@@ -7,7 +7,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+
 import java.util.List;
+
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class ItemControllerTest extends TestContainerTest {
@@ -18,7 +21,7 @@ class ItemControllerTest extends TestContainerTest {
     @BeforeEach
     void setUp() {
         cleanupDatabase();
-        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
+        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/users.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 
     @Test
@@ -32,7 +35,8 @@ class ItemControllerTest extends TestContainerTest {
 
     @Test
     void addToCart_shouldReturnRedirect() {
-        webTestClient.post()
+        webTestClient.mutateWith(mockUser("user1").roles("USER"))
+                .post()
                 .uri("/items/2")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue("action=plus")

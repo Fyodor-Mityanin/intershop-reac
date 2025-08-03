@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <title>Showcase of goods</title>
 </head>
 
 <body>
-    <a href="/orders" style="float:right;">
+    <b sec:authorize="isAuthenticated()">Logged user: <span sec:authentication="name"></span></b>
+    <a sec:authorize="isAnonymous()" th:href="@{/login}" style="float:right;">
+        <b>LOGIN &cudarrr;</b>
+    </a>
+    <a sec:authorize="isAuthenticated()" href="/logout" style="float:right;">
+        <b>LOGOUT &cudarrr;</b>
+    </a>
+    <a sec:authorize="isAuthenticated()" href="/orders" style="float:right;">
         <b>ORDERS &cudarrr;</b>
     </a>
-    <a href="/cart/items" style="float:right;">
+    <a sec:authorize="isAuthenticated()" href="/cart/items" style="float:right;">
         <b>CART &cudarrr;</b>
     </a>
     <table style="width:70%;margin-left:auto;margin-right:auto;">
@@ -39,11 +48,6 @@
                             <option value="100" th:selected="${pageSize==100}">100</option>
                         </select>
                     </p>
-<!--                    <p>-->
-<!--                        <button th:if="${items.hasPrevious()}" name="pageNumber" th:value="${items.getPageable().getPageNumber()-1}">&lt;</button>-->
-<!--                        <span th:text="${'Страница: '+items.getPageable().getPageNumber()}"></span>-->
-<!--                        <button th:if="${items.hasNext()}" name="pageNumber" th:value="${items.getPageable().getPageNumber()+1}">&gt;</button>-->
-<!--                    </p>-->
                 </form>
             </td>
         </tr>
@@ -68,7 +72,7 @@
                     <tr>
                         <td th:text="${item.getDescription()}"></td>
                     </tr>
-                    <tr>
+                    <tr sec:authorize="isAuthenticated()">
                         <td>
                             <form th:action="${'/main/items/'+item.getId()}" method="post">
                                 <button name="action" value="minus">-</button>

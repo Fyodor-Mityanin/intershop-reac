@@ -3,10 +3,10 @@ package ru.yandex.practicum.intershop.shop.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
-import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.shop.dto.AddToCartRequestDto;
 import ru.yandex.practicum.intershop.shop.service.ItemService;
@@ -26,20 +26,20 @@ public class MainController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "NO") String sort,
             @RequestParam(defaultValue = "10") Integer pageSize,
-            WebSession session
+            Authentication authentication
     ) {
         return Mono.just(
                 Rendering.view("main")
                         .modelAttribute("sort", sort)
                         .modelAttribute("pageSize", pageSize)
-                        .modelAttribute("items", itemService.getBySearchPageable(search, sort, pageSize, session.getId()))
+                        .modelAttribute("items", itemService.getBySearchPageable(search, sort, pageSize, authentication.getName()))
                         .build()
         );
     }
 
     @PostMapping(value = "/main/items/{itemId}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public Mono<String> addToCartMain(@PathVariable Long itemId, AddToCartRequestDto request, WebSession session) {
-        return orderService.addToOrder(itemId, request.getAction(), session.getId())
+    public Mono<String> addToCartMain(@PathVariable Long itemId, AddToCartRequestDto request, Authentication authentication) {
+        return orderService.addToOrder(itemId, request.getAction(), authentication.getName())
                 .thenReturn("redirect:/");
     }
 }

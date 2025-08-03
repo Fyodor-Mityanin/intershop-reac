@@ -13,6 +13,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 public class CartControllerTest extends TestContainerTest {
@@ -37,7 +38,7 @@ public class CartControllerTest extends TestContainerTest {
     @BeforeEach
     void setUp() {
         cleanupDatabase();
-        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
+        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/users.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 
     @Test
@@ -48,7 +49,8 @@ public class CartControllerTest extends TestContainerTest {
                         .withBody("{\"balance\": 10000.0}")
                         .withStatus(200)));
 
-        webTestClient.get()
+        webTestClient.mutateWith(mockUser("user1").roles("USER"))
+                .get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -57,7 +59,8 @@ public class CartControllerTest extends TestContainerTest {
 
     @Test
     void addToCartTest() {
-        webTestClient.post()
+        webTestClient.mutateWith(mockUser("user1").roles("USER"))
+                .post()
                 .uri("/cart/items/2")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .bodyValue("action=plus")

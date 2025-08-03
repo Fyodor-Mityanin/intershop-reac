@@ -14,9 +14,9 @@ import java.math.BigDecimal;
 @Repository
 public interface OrderRepository extends R2dbcRepository<Order, Long> {
 
-    Flux<Order> findBySessionAndStatusNot(String session, OrderStatus status);
+    Flux<Order> findByUserLoginAndStatusNot(String userLogin, OrderStatus status);
 
-    Mono<Order> findBySessionAndStatus(String session, OrderStatus status);
+    Mono<Order> findByUserLoginAndStatus(String userLogin, OrderStatus status);
 
     @Query("""
             SELECT
@@ -24,7 +24,7 @@ public interface OrderRepository extends R2dbcRepository<Order, Long> {
             FROM orders o
                 JOIN order_items oi ON o.id = oi.order_id
                 JOIN items i ON oi.item_id = i.id
-            WHERE o.session = :sessionId
+            WHERE o.user_login = :userLogin
             GROUP BY o.id;""")
-    Mono<BigDecimal> getTotalSumBySession(@Param("sessionId") String sessionId);
+    Mono<BigDecimal> getTotalSumByUserLogin(@Param("userLogin") String userLogin);
 }

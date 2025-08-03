@@ -9,6 +9,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
 
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser;
+
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 public class OrderControllerTest extends TestContainerTest {
 
@@ -18,12 +20,13 @@ public class OrderControllerTest extends TestContainerTest {
     @BeforeEach
     void setUp() {
         cleanupDatabase();
-        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/orders.sql", "/sql/order_items.sql"));
+        executeSqlScriptsBlocking(List.of("/sql/items.sql", "/sql/users.sql", "/sql/orders.sql", "/sql/order_items.sql"));
     }
 
     @Test
     void getOrderTest() {
-        webTestClient.get()
+        webTestClient.mutateWith(mockUser("user1").roles("USER"))
+                .get()
                 .uri("/orders/10")
                 .exchange()
                 .expectStatus().isOk()

@@ -3,10 +3,10 @@ package ru.yandex.practicum.intershop.shop.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
-import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.shop.dto.AddToCartRequestDto;
 import ru.yandex.practicum.intershop.shop.service.ItemService;
@@ -22,16 +22,16 @@ public class ItemController {
     private final OrderService orderService;
 
     @PostMapping(value = "/{itemId}", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public Mono<String> addToCart(@PathVariable Long itemId, AddToCartRequestDto request, WebSession session) {
-        return orderService.addToOrder(itemId, request.getAction(), session.getId())
+    public Mono<String> addToCart(@PathVariable Long itemId, AddToCartRequestDto request, Authentication authentication) {
+        return orderService.addToOrder(itemId, request.getAction(), authentication.getName())
                 .thenReturn("redirect:/items/{itemId}");
     }
 
     @GetMapping("/{itemId}")
-    public Mono<Rendering> getItem(@PathVariable Long itemId, WebSession session) {
+    public Mono<Rendering> getItem(@PathVariable Long itemId, Authentication authentication) {
         return Mono.just(
                 Rendering.view("item")
-                        .modelAttribute("item", itemService.getById(itemId, session.getId()))
+                        .modelAttribute("item", itemService.getById(itemId, authentication.getName()))
                         .build()
         );
     }

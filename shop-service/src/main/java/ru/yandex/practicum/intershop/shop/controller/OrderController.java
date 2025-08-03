@@ -2,12 +2,12 @@ package ru.yandex.practicum.intershop.shop.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.reactive.result.view.Rendering;
-import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Mono;
 import ru.yandex.practicum.intershop.shop.service.OrderService;
 
@@ -20,10 +20,10 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public Mono<Rendering> getOrders(WebSession session) {
+    public Mono<Rendering> getOrders(Authentication authentication) {
         return Mono.just(
                 Rendering.view("orders")
-                        .modelAttribute("orders", orderService.getBySession(session.getId()))
+                        .modelAttribute("orders", orderService.getByUserLogin(authentication.getName()))
                         .build()
         );
     }
