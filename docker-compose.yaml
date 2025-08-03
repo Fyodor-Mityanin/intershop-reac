@@ -36,6 +36,9 @@ services:
       SPRING_REDIS_PORT: 6379
       PAYMENT_API_URL: http://payment-service:8080
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: intershop
+      KEYCLOAK_CLIENT_ID: shop-service
+      KEYCLOAK_CLIENT_SECRET: lDMUoE4rNETIxNKNIE9u7yUeWtxnXHVs
     ports:
       - "8080:8080"
     depends_on:
@@ -63,10 +66,14 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: keycloak
-    command: start-dev
+    command:
+      - start-dev
+      - --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+    volumes:
+      - ./keycloak/realm-export:/opt/keycloak/data/import
     ports:
       - "9090:8080"
     networks:

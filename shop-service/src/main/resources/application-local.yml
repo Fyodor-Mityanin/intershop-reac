@@ -1,4 +1,16 @@
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: shop-service
+            client-secret: lDMUoE4rNETIxNKNIE9u7yUeWtxnXHVs
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: http://localhost:9090/realms/intershop/protocol/openid-connect/token
+
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/postgres
     username: postgres
@@ -11,3 +23,8 @@ spring:
 payment:
   api:
     url: 'http://localhost:8081'
+
+logging:
+  level:
+    reactor.netty.http.client: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
